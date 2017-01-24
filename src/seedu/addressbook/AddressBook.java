@@ -72,6 +72,7 @@ public class AddressBook {
     private static final String MESSAGE_COMMAND_HELP_PARAMETERS = "\tParameters: %1$s";
     private static final String MESSAGE_COMMAND_HELP_EXAMPLE = "\tExample: %1$s";
     private static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted Person: %1$s";
+	private static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited Person: %1$s";
     private static final String MESSAGE_DISPLAY_PERSON_DATA = "%1$s  Phone Number: %2$s  Email: %3$s";
     private static final String MESSAGE_DISPLAY_LIST_ELEMENT_INDEX = "%1$d. ";
     private static final String MESSAGE_GOODBYE = "Exiting Address Book... Good bye!";
@@ -120,6 +121,11 @@ public class AddressBook {
     private static final String COMMAND_SORT_DESC = "Displays all persons as a list in alphabetical order.";
     private static final String COMMAND_SORT_EXAMPLE = COMMAND_SORT_WORD;
 
+    private static final String COMMAND_EDIT_WORD = "edit";
+    private static final String COMMAND_EDIT_DESC = "Edits a person in the address book.";
+    private static final String COMMAND_EDIT_PARAMETER = "EXACT_NAME p/PHONE_NUMBER e/EMAIL";
+    private static final String COMMAND_EDIT_EXAMPLE = COMMAND_EDIT_WORD + " John Doe p/12345678 e/johnd@u.nus.edu";
+    
     private static final String COMMAND_DELETE_WORD = "delete";
     private static final String COMMAND_DELETE_DESC = "Deletes a person identified by the index number used in "
                                                     + "the last find/list call.";
@@ -187,6 +193,7 @@ public class AddressBook {
      * List of all persons in the address book.
      */
     private static final ArrayList<String[]> ALL_PERSONS = new ArrayList<>();
+
 
     /**
      * Stores the most recent list of persons shown to the user as a result of a user command.
@@ -384,6 +391,8 @@ public class AddressBook {
         	return executeSortAllPersonsInAddressBook();
         case COMMAND_DELETE_WORD:
             return executeDeletePerson(commandArgs);
+        case COMMAND_EDIT_WORD:
+            return executeEditPerson(commandArgs);
         case COMMAND_CLEAR_WORD:
             return executeClearAddressBook();
         case COMMAND_HELP_WORD:
@@ -522,9 +531,74 @@ public class AddressBook {
     }
 
     /**
-     * Checks validity of delete person argument string's format.
+     * Edits person identified by exact name.
+     * 
+     * @param commandArgs
+     * @return feedback display message for the operation result
+     */
+	private static String executeEditPerson(String commandArgs) {
+		// TODO Auto-generated method stub      
+		// try decoding a person from the raw args
+        final Optional<String[]> decodeResult = decodePersonFromString(commandArgs);
+        // checks if args are valid (decode result will not be present if the person is invalid)
+        if (!decodeResult.isPresent()) {
+            return getMessageForInvalidCommandInput(COMMAND_EDIT_WORD, getUsageInfoForEditCommand());
+        }
+        // edit the person as specified
+        final String[] personNewInfo = decodeResult.get();
+        return editPersonInAddressBook(personNewInfo) ? getMessageForSuccessfulEdit(personNewInfo) //success
+        											  : MESSAGE_PERSON_NOT_IN_ADDRESSBOOK; // not found
+	}
+	
+	/**
+	 * Updates the person in address book which has the exact name as updated information.
+	 * 
+	 * @param personNewInfo
+	 * @return whether the person exists in the address book
+	 */
+    private static boolean editPersonInAddressBook(String[] personNewInfo) {
+		// TODO Auto-generated method stub
+    	boolean hasPerson = false;
+		for(String[] person: ALL_PERSONS){
+			if(nameMatchWhenEdit(person, personNewInfo)){
+				hasPerson = true;
+				updatePerson(person, personNewInfo);
+			}
+		}
+		return hasPerson;
+	}
+    
+    /**
+     * Update a person in address book with new information
+     * 
+     * @param person
+     * @param personNewInfo
+     */
+	private static void updatePerson(String[] person, String[] personNewInfo) {
+		// TODO Auto-generated method stub
+		ALL_PERSONS.set(ALL_PERSONS.indexOf(person), personNewInfo);
+	}
+	
+	/**
+	 * Check whether the new information matches the person's name in address book.
+	 * 
+	 * @param person
+	 * @param personNewInfo
+	 * @return
+	 */
+	private static boolean nameMatchWhenEdit(String[] person, String[] personNewInfo) {
+		// TODO Auto-generated method stub
+		if(person[PERSON_DATA_INDEX_NAME].equals(personNewInfo[PERSON_DATA_INDEX_NAME])){
+			return true;
+		} else{
+			return false;
+		}
+	}
+
+	/**
+     * Checks validity of delete/edit person argument string's format.
      *
-     * @param rawArgs raw command args string for the delete person command
+     * @param rawArgs raw command args string for the delete/edit person command
      * @return whether the input args string is valid
      */
     private static boolean isDeletePersonArgsValid(String rawArgs) {
@@ -537,9 +611,9 @@ public class AddressBook {
     }
 
     /**
-     * Extracts the target's index from the raw delete person args string
+     * Extracts the target's index from the raw delete/edit person args string
      *
-     * @param rawArgs raw command args string for the delete person command
+     * @param rawArgs raw command args string for the delete/edit person command
      * @return extracted index
      */
     private static int extractTargetIndexFromDeletePersonArgs(String rawArgs) {
@@ -568,6 +642,16 @@ public class AddressBook {
     }
 
     /**
+     * Constructs a feedback message for a successful edit person command execution.
+     *
+     * @see #executeDeletePerson(String)
+     * @param deletedPerson successfully deleted
+     * @return successful delete person feedback message
+     */
+    private static String getMessageForSuccessfulEdit(String[] editedPerson) {
+        return String.format(MESSAGE_EDIT_PERSON_SUCCESS, getMessageForFormattedPersonData(editedPerson));
+    }
+    /**
      * Clears all persons in the address book.
      *
      * @return feedback display message for the operation result
@@ -576,6 +660,7 @@ public class AddressBook {
         clearAddressBook();
         return MESSAGE_ADDRESSBOOK_CLEARED;
     }
+    
 
     /**
      * Sorts and displays all persons in the address book in alphabetical order.
@@ -1116,6 +1201,7 @@ public class AddressBook {
                 + getUsageInfoForFindCommand() + LS
                 + getUsageInfoForViewCommand() + LS
                 + getUsageInfoForSortCommand() + LS
+                + getUsageInfoForEditCommand() + LS
                 + getUsageInfoForDeleteCommand() + LS
                 + getUsageInfoForClearCommand() + LS
                 + getUsageInfoForExitCommand() + LS
@@ -1149,6 +1235,12 @@ public class AddressBook {
                 + String.format(MESSAGE_COMMAND_HELP_EXAMPLE, COMMAND_DELETE_EXAMPLE) + LS;
     }
 
+    /** Returns the string for showing 'edit' command usage instruction */
+    private static String getUsageInfoForEditCommand(){
+    	return String.format(MESSAGE_COMMAND_HELP, COMMAND_EDIT_WORD, COMMAND_EDIT_DESC) + LS
+                + String.format(MESSAGE_COMMAND_HELP_PARAMETERS, COMMAND_EDIT_PARAMETER) + LS
+                + String.format(MESSAGE_COMMAND_HELP_EXAMPLE, COMMAND_EDIT_EXAMPLE) + LS;
+    }
     /** Returns string for showing 'clear' command usage instruction */
     private static String getUsageInfoForClearCommand() {
         return String.format(MESSAGE_COMMAND_HELP, COMMAND_CLEAR_WORD, COMMAND_CLEAR_DESC) + LS
