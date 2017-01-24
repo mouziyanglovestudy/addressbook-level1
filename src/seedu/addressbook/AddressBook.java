@@ -134,7 +134,10 @@ public class AddressBook {
     private static final String COMMAND_EXIT_EXAMPLE = COMMAND_EXIT_WORD;
 
     private static final String DIVIDER = "===================================================";
-
+    
+    private static final int COMMAND_TYPE_INDEX = 0;
+    private static final int COMMAND_ARG_INDEX = 1;
+    		
 
     /* We use a String array to store details of a single person.
      * The constants given below are the indexes for the different data elements of a person
@@ -362,8 +365,8 @@ public class AddressBook {
      */
     private static String executeCommand(String userInputString) {
         final String[] commandTypeAndParams = splitCommandWordAndArgs(userInputString);
-        final String commandType = commandTypeAndParams[0];
-        final String commandArgs = commandTypeAndParams[1];
+        final String commandType = commandTypeAndParams[COMMAND_TYPE_INDEX];
+        final String commandArgs = commandTypeAndParams[COMMAND_ARG_INDEX];
         switch (commandType) {
         case COMMAND_ADD_WORD:
             return executeAddPerson(commandArgs);
@@ -789,12 +792,12 @@ public class AddressBook {
      * @param exactPerson the actual person inside the address book (exactPerson == the person to delete in the full list)
      * @return true if the given person was found and deleted in the model
      */
-    private static boolean deletePersonFromAddressBook(String[] exactPerson) {
-        final boolean changed = ALL_PERSONS.remove(exactPerson);
-        if (changed) {
+    private static boolean hasDeletedPersonFromAddressBook(String[] exactPerson) {
+        final boolean isChanged = ALL_PERSONS.remove(exactPerson);
+        if (isChanged) {
             savePersonsToFile(getAllPersonsInAddressBook(), storageFilePath);
         }
-        return changed;
+        return isChanged;
     }
 
     /**
@@ -953,10 +956,10 @@ public class AddressBook {
     private static boolean isPersonDataExtractableFrom(String personData) {
         final String matchAnyPersonDataPrefix = PERSON_DATA_PREFIX_PHONE + '|' + PERSON_DATA_PREFIX_EMAIL;
         final String[] splitArgs = personData.trim().split(matchAnyPersonDataPrefix);
-        return splitArgs.length == 3 // 3 arguments
-                && !splitArgs[0].isEmpty() // non-empty arguments
-                && !splitArgs[1].isEmpty()
-                && !splitArgs[2].isEmpty();
+        return splitArgs.length == PERSON_DATA_COUNT // 3 arguments
+                && !splitArgs[PERSON_DATA_INDEX_NAME].isEmpty() // non-empty arguments
+                && !splitArgs[PERSON_DATA_INDEX_PHONE].isEmpty()
+                && !splitArgs[PERSON_DATA_INDEX_EMAIL].isEmpty();
     }
 
     /**
@@ -1147,9 +1150,15 @@ public class AddressBook {
      * @return  string without the sign
      */
     private static String removePrefixSign(String s, String sign) {
-        return s.replace(sign, "");
+        return removePrefix(s, sign);
     }
 
+    /**
+    * Removes prefix from the given fullString if prefix occurs at the start of the string.
+    */
+    private static String removePrefix(String fullString, String prefix) {
+    	return fullString.replace(prefix, "");
+    }
     /**
      * Splits a source string into the list of substrings that were separated by whitespace.
      *
